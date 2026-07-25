@@ -22,12 +22,12 @@ dependencies:
     sdk: flutter
   native_geofence:
     git:
-      url: git@github.com:yarith28/native_geofence.git
+      url: https://github.com/yarith28/native_geofence
       ref: improve
   time_integrity:
     git:
-      url: git@github.com:yarith28/time_integrity.git
-      ref: main
+      url: https://github.com/yarith28/time_integrity
+      ref: main_alt
 
 dev_dependencies:
   flutter_lints: ^6.0.0
