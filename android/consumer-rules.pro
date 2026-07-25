@@ -1,0 +1,1 @@
+-keep class com.yarithdev.smart_geofence.wake.NativeGeofenceBridge { *; }

@@ -1,0 +1,40 @@
+name: smart_geofence
+description: "Smart geofencing for Flutter with native pass-through, proximity confirmation, activity gating, and recovery layers."
+version: 1.0.0
+homepage: https://github.com/yarith28/smart_geofence
+repository: https://github.com/yarith28/smart_geofence
+issue_tracker: https://github.com/yarith28/smart_geofence/issues
+topics:
+  - geofencing
+  - geofence
+  - location
+  - background-location
+  - flutter-plugin
+
+publish_to: 'none'
+
+environment:
+  sdk: ^3.10.8
+  flutter: '>=3.38.9'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  native_geofence:
+    git:
+      url: git@github.com:yarith28/native_geofence.git
+      ref: improve
+  time_integrity:
+    git:
+      url: git@github.com:yarith28/time_integrity.git
+      ref: main
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.yarithdev.smart_geofence
+        pluginClass: SmartGeofencePlugin

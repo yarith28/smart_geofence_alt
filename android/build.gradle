@@ -1,0 +1,78 @@
+group = "com.yarithdev.smart_geofence"
+version = "1.0.0"
+
+buildscript {
+    ext.kotlin_version = "2.2.20"
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.11.1")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+
+def smartGeofencePackageVersion = "1.0.0"
+def smartGeofenceBuildRevision = System.getenv("SMART_GEOFENCE_BUILD_REVISION")
+if (smartGeofenceBuildRevision == null || smartGeofenceBuildRevision.trim().isEmpty()) {
+    try {
+        def process = new ProcessBuilder("git", "rev-parse", "--short=12", "HEAD")
+            .directory(projectDir.parentFile)
+            .redirectErrorStream(true)
+            .start()
+        smartGeofenceBuildRevision = process.waitFor() == 0
+            ? process.inputStream.getText("UTF-8").trim()
+            : "unknown"
+    } catch (ignored) {
+        smartGeofenceBuildRevision = "unknown"
+    }
+}
+
+android {
+    namespace = "com.yarithdev.smart_geofence"
+
+    compileSdk = 36
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main.java.srcDirs += "src/main/kotlin"
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    defaultConfig {
+        minSdk = 26
+        consumerProguardFiles "consumer-rules.pro"
+        buildConfigField "String", "SMART_GEOFENCE_PACKAGE_VERSION",
+            "\"${smartGeofencePackageVersion}\""
+        buildConfigField "String", "SMART_GEOFENCE_BUILD_REVISION",
+            "\"${smartGeofenceBuildRevision}\""
+    }
+
+    dependencies {
+        implementation("com.google.android.gms:play-services-location:21.3.0")
+        implementation("androidx.core:core-ktx:1.13.1")
+    }
+}

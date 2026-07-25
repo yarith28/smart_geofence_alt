@@ -1,0 +1,17 @@
+version:
+  revision: "c6f67dede3d4aa1aa7a69dd56a3494a5cde6cc80"
+  channel: "stable"
+
+project_type: plugin
+
+migration:
+  platforms:
+    - platform: root
+      create_revision: c6f67dede3d4aa1aa7a69dd56a3494a5cde6cc80
+      base_revision: c6f67dede3d4aa1aa7a69dd56a3494a5cde6cc80
+    - platform: android
+      create_revision: c6f67dede3d4aa1aa7a69dd56a3494a5cde6cc80
+      base_revision: c6f67dede3d4aa1aa7a69dd56a3494a5cde6cc80
+
+  unmanaged_files:
+    - 'lib/main.dart'
