@@ -956,7 +956,7 @@ class _SmartGeofenceRegistrationSynchronizer {
   ) => ng.AndroidGeofenceSettings(
     initialTriggers: const <ng.GeofenceEvent>{},
     expiration: settings?.expiration,
-    loiteringDelay: settings?.loiteringDelay ?? const Duration(minutes: 5),
+    loiteringDelay: settings?.loiteringDelay ?? Duration.zero,
     notificationResponsiveness: settings?.notificationResponsiveness,
   );
 
