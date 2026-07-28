@@ -358,6 +358,11 @@ class SGConfig {
           'eventLocationMaxAccuracyMeters',
           defaults.escalation.locationFilter.eventMaxAccuracyMeters,
         ),
+        insideEventMaxAccuracyMeters: _double(
+          map,
+          'insideEventLocationMaxAccuracyMeters',
+          defaults.escalation.locationFilter.insideEventMaxAccuracyMeters,
+        ),
       ),
       nativeEvents: nativeEvents,
       teleportGuard: SGTeleportGuardConfig(
@@ -403,6 +408,18 @@ class SGConfig {
             legacyKey: 'proximityPulseIntervalSeconds',
             legacyUnitMillis: Duration.millisecondsPerSecond,
             defaultValue: defaults.proximityPulse.interval,
+          ),
+        ),
+        nearFenceDistanceMeters: _double(
+          map,
+          'proximityPulseNearFenceDistanceMeters',
+          defaults.proximityPulse.nearFenceDistanceMeters,
+        ),
+        nearFenceInterval: Duration(
+          milliseconds: _int(
+            map,
+            'proximityPulseNearFenceIntervalMillis',
+            defaults.proximityPulse.nearFenceInterval.inMilliseconds,
           ),
         ),
         maxLocationAttempts: _int(
@@ -735,6 +752,10 @@ class SGConfig {
       'escalation.locationFilter.eventMaxAccuracyMeters',
       escalation.locationFilter.eventMaxAccuracyMeters,
     );
+    _requireFinitePositive(
+      'escalation.locationFilter.insideEventMaxAccuracyMeters',
+      escalation.locationFilter.insideEventMaxAccuracyMeters,
+    );
     _requireFiniteNonNegative(
       'nativeEvents.enterConfirmRadiusSlackMeters',
       nativeEvents.enterConfirmRadiusSlackMeters,
@@ -789,6 +810,14 @@ class SGConfig {
       'proximityPulse.activationDistanceMeters',
       proximityPulse.activationDistanceMeters,
     );
+    _requireFiniteNonNegative(
+      'proximityPulse.nearFenceDistanceMeters',
+      proximityPulse.nearFenceDistanceMeters,
+    );
+    _requireNonNegativeDuration(
+      'proximityPulse.nearFenceInterval',
+      proximityPulse.nearFenceInterval,
+    );
     if (proximityPulse.maxLocationAttempts <= 0) {
       throw ArgumentError.value(
         proximityPulse.maxLocationAttempts,
@@ -819,6 +848,12 @@ class SGConfig {
       advanced.proximityPulse.minInterval,
       'proximityPulse.transitionConfirmation.interval',
       proximityPulse.transitionConfirmation.interval,
+    );
+    _requireNotGreater(
+      'advanced.proximityPulse.minInterval',
+      advanced.proximityPulse.minInterval,
+      'proximityPulse.nearFenceInterval',
+      proximityPulse.nearFenceInterval,
     );
     _requireNotGreater(
       'proximityPulse.transitionConfirmation.interval',
@@ -1038,6 +1073,8 @@ class SGConfig {
         escalation.locationFilter.pulseMaxAccuracyMeters,
     'eventLocationMaxAccuracyMeters':
         escalation.locationFilter.eventMaxAccuracyMeters,
+    'insideEventLocationMaxAccuracyMeters':
+        escalation.locationFilter.insideEventMaxAccuracyMeters,
     'nativeExitConfirmationEnabled': nativeEvents.confirmExits,
     'nativeEnterConfirmationEnabled': nativeEvents.confirmEnters,
     'nativeConfirmDelayMillis': nativeEvents.confirmDelay.inMilliseconds,
@@ -1060,6 +1097,10 @@ class SGConfig {
     'proximityPulseActivationDistanceMeters':
         proximityPulse.activationDistanceMeters,
     'proximityPulseIntervalMillis': proximityPulse.interval.inMilliseconds,
+    'proximityPulseNearFenceDistanceMeters':
+        proximityPulse.nearFenceDistanceMeters,
+    'proximityPulseNearFenceIntervalMillis':
+        proximityPulse.nearFenceInterval.inMilliseconds,
     'proximityConfirmMaxAttempts': proximityPulse.maxLocationAttempts,
     'proximityPulseTransitionConfirmationIntervalMillis':
         proximityPulse.transitionConfirmation.interval.inMilliseconds,
@@ -1635,25 +1676,32 @@ class SGLocationFilterConfig {
 
   final double eventMaxAccuracyMeters;
 
+  final double insideEventMaxAccuracyMeters;
+
   const SGLocationFilterConfig({
     this.pulseMaxAccuracyMeters = 300.0,
     this.eventMaxAccuracyMeters = 150.0,
+    this.insideEventMaxAccuracyMeters = 300.0,
   });
 
   SGLocationFilterConfig copyWith({
     double? pulseMaxAccuracyMeters,
     double? eventMaxAccuracyMeters,
+    double? insideEventMaxAccuracyMeters,
   }) => SGLocationFilterConfig(
     pulseMaxAccuracyMeters:
         pulseMaxAccuracyMeters ?? this.pulseMaxAccuracyMeters,
     eventMaxAccuracyMeters:
         eventMaxAccuracyMeters ?? this.eventMaxAccuracyMeters,
+    insideEventMaxAccuracyMeters:
+        insideEventMaxAccuracyMeters ?? this.insideEventMaxAccuracyMeters,
   );
 
   @override
   String toString() =>
       'SGLocationFilterConfig(pulseMaxAccuracyMeters: $pulseMaxAccuracyMeters, '
-      'eventMaxAccuracyMeters: $eventMaxAccuracyMeters)';
+      'eventMaxAccuracyMeters: $eventMaxAccuracyMeters, '
+      'insideEventMaxAccuracyMeters: $insideEventMaxAccuracyMeters)';
 }
 
 class SGTransitionValidationConfig {
@@ -1780,6 +1828,10 @@ class SGProximityPulseConfig {
 
   final Duration interval;
 
+  final double nearFenceDistanceMeters;
+
+  final Duration nearFenceInterval;
+
   final int maxLocationAttempts;
 
   final SGTransitionConfirmationPulseConfig transitionConfirmation;
@@ -1790,6 +1842,8 @@ class SGProximityPulseConfig {
     this.enabled = true,
     this.activationDistanceMeters = 1500.0,
     this.interval = const Duration(minutes: 6),
+    this.nearFenceDistanceMeters = 300.0,
+    this.nearFenceInterval = const Duration(minutes: 2, seconds: 30),
     this.maxLocationAttempts = 10,
     this.transitionConfirmation = const SGTransitionConfirmationPulseConfig(),
     this.activeHours = const SGActiveHoursConfig(),
@@ -1801,6 +1855,8 @@ class SGProximityPulseConfig {
     bool? enabled,
     double? activationDistanceMeters,
     Duration? interval,
+    double? nearFenceDistanceMeters,
+    Duration? nearFenceInterval,
     int? maxLocationAttempts,
     SGTransitionConfirmationPulseConfig? transitionConfirmation,
     SGActiveHoursConfig? activeHours,
@@ -1809,6 +1865,9 @@ class SGProximityPulseConfig {
     activationDistanceMeters:
         activationDistanceMeters ?? this.activationDistanceMeters,
     interval: interval ?? this.interval,
+    nearFenceDistanceMeters:
+        nearFenceDistanceMeters ?? this.nearFenceDistanceMeters,
+    nearFenceInterval: nearFenceInterval ?? this.nearFenceInterval,
     maxLocationAttempts: maxLocationAttempts ?? this.maxLocationAttempts,
     transitionConfirmation:
         transitionConfirmation ?? this.transitionConfirmation,
@@ -1819,6 +1878,8 @@ class SGProximityPulseConfig {
   String toString() =>
       'SGProximityPulseConfig(enabled: $enabled, '
       'activationDistanceMeters: $activationDistanceMeters, interval: $interval, '
+      'nearFenceDistanceMeters: $nearFenceDistanceMeters, '
+      'nearFenceInterval: $nearFenceInterval, '
       'maxLocationAttempts: $maxLocationAttempts, '
       'transitionConfirmation: $transitionConfirmation, activeHours: $activeHours)';
 }

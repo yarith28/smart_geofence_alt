@@ -1330,6 +1330,7 @@ object SmartGeofenceDiagnostics {
             "proximityPulseSchedulingActive" to proximityPulseState?.schedulingActive,
             "proximityPulseProximityFenceIds" to
                 proximityPulseState?.proximityFenceIds?.sorted(),
+            "proximityPulseNearFenceIds" to proximityPulseState?.nearFenceIds?.sorted(),
             "proximityPulseInsideFenceIds" to proximityPulseState?.insideFenceIds?.sorted(),
             "proximityPulseLivenessStartedAtMillis" to
                 proximityPulseState?.livenessStartedAtMillis,
@@ -1795,6 +1796,7 @@ object SmartGeofenceDiagnostics {
         "proximityConfirmRetryDelayPolicy" to "current_pulse_interval",
         "pulseLocationMaxAccuracyMeters" to pulseLocationMaxAccuracyMeters,
         "eventLocationMaxAccuracyMeters" to eventLocationMaxAccuracyMeters,
+        "insideEventLocationMaxAccuracyMeters" to insideEventLocationMaxAccuracyMeters,
         "nativeExitConfirmationEnabled" to nativeExitConfirmationEnabled,
         "nativeEnterConfirmationEnabled" to nativeEnterConfirmationEnabled,
         "nativeConfirmDelayMillis" to nativeConfirmDelayMillis,
@@ -1812,6 +1814,8 @@ object SmartGeofenceDiagnostics {
         "proximityPulseEnabled" to proximityPulseEnabled,
         "proximityPulseActivationDistanceMeters" to proximityPulseActivationDistanceMeters,
         "proximityPulseIntervalMillis" to proximityPulseIntervalMillis,
+        "proximityPulseNearFenceDistanceMeters" to proximityPulseNearFenceDistanceMeters,
+        "proximityPulseNearFenceIntervalMillis" to proximityPulseNearFenceIntervalMillis,
         "proximityPulseTransitionConfirmationIntervalMillis" to
             proximityPulseTransitionConfirmationIntervalMillis,
         "proximityPulseTransitionConfirmationBurstDurationMillis" to

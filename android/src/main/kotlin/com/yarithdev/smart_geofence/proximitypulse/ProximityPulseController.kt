@@ -94,6 +94,11 @@ internal fun normalizedInsideFenceIds(
     eligibleFenceIds: Set<String>,
 ): Set<String> = observedInsideIds.intersect(eligibleFenceIds)
 
+internal fun normalizedNearFenceIds(
+    persistedIds: Set<String>,
+    proximityFenceIds: Set<String>,
+): Set<String> = persistedIds.intersect(proximityFenceIds)
+
 internal fun stationaryStopsPulsePurpose(purpose: ProximityPulsePurpose): Boolean =
     purpose == ProximityPulsePurpose.FUSED_LIVENESS
 
@@ -132,6 +137,7 @@ internal fun shouldMovePulseCadenceForConfirmAttempt(
 internal fun selectPulsePurpose(
     pending: Collection<PendingNativeTransition>,
     proximityTargetCount: Int,
+    nearFenceTargetCount: Int,
     insideTargetCount: Int,
     livenessRequested: Boolean,
     nowMillis: Long,
@@ -143,6 +149,9 @@ internal fun selectPulsePurpose(
         }
     ) {
         return ProximityPulsePurpose.TRANSITION_CONFIRMATION
+    }
+    if (nearFenceTargetCount > 0) {
+        return ProximityPulsePurpose.NEAR_FENCE
     }
     if (insideTargetCount > 0 ||
         nonNativePending.any { it.direction == NativeTransitionDirection.EXIT }
@@ -197,10 +206,7 @@ object ProximityPulseController {
         val fence = FenceStore.get(appContext, fenceId) ?: return false
         if (!config.proximityPulseEnabled || !fence.armed ||
             (!fence.triggersEnter && !fence.triggersExit) ||
-            !isProximityActivationEligible(
-                edgeDistanceMeters,
-                config.proximityPulseActivationDistanceMeters,
-            )
+            !edgeDistanceMeters.isFinite()
         ) {
             return false
         }
@@ -208,20 +214,48 @@ object ProximityPulseController {
             return false
         }
         val existing = ProximityPulseStateStore.load(appContext)
-        if (fenceId in existing?.proximityFenceIds.orEmpty()) return reconcile(
-            appContext,
-            "proximity_confirmed:$source",
-            forceReschedule = false,
-        )
+        val proximity = existing?.proximityFenceIds.orEmpty().toMutableSet()
+        val near = existing?.nearFenceIds.orEmpty().toMutableSet()
+        if (edgeDistanceMeters >= 0.0) {
+            if (isProximityActivationEligible(
+                    edgeDistanceMeters,
+                    config.proximityPulseActivationDistanceMeters,
+                )
+            ) {
+                proximity += fenceId
+                if (edgeDistanceMeters <=
+                    config.proximityPulseNearFenceDistanceMeters.coerceAtLeast(0.0)
+                ) {
+                    near += fenceId
+                } else {
+                    near -= fenceId
+                }
+            } else {
+                proximity -= fenceId
+                near -= fenceId
+            }
+        }
+        near.retainAll(proximity)
+        if (existing == null && proximity.isEmpty() && near.isEmpty()) return false
+        if (proximity == existing?.proximityFenceIds.orEmpty() &&
+            near == existing?.nearFenceIds.orEmpty()
+        ) {
+            return reconcile(
+                appContext,
+                "proximity_confirmed:$source",
+                forceReschedule = false,
+            )
+        }
         val now = System.currentTimeMillis()
         saveTargets(
             appContext,
             existing,
-            proximityIds = existing?.proximityFenceIds.orEmpty() + fenceId,
+            proximityIds = proximity,
+            nearFenceIds = near,
             insideIds = existing?.insideFenceIds.orEmpty(),
             nowMillis = now,
         )
-        return reconcile(appContext, "proximity_target_added:$source", forceReschedule = true)
+        return reconcile(appContext, "proximity_targets_updated:$source", forceReschedule = false)
     }
 
     @Synchronized
@@ -236,10 +270,12 @@ object ProximityPulseController {
         val existing = ProximityPulseStateStore.load(appContext)
         val config = SmartGeofenceConfigStore.load(appContext)
         val proximity = existing?.proximityFenceIds.orEmpty().toMutableSet()
+        val near = existing?.nearFenceIds.orEmpty().toMutableSet()
         val inside = existing?.insideFenceIds.orEmpty().toMutableSet()
         when (state) {
             ObservedFenceState.INSIDE -> {
                 proximity -= fenceId
+                near -= fenceId
                 inside += fenceId
             }
             ObservedFenceState.OUTSIDE -> {
@@ -252,12 +288,23 @@ object ProximityPulseController {
                     )
                 ) {
                     proximity += fenceId
+                    if (edgeDistanceMeters != null &&
+                        isProximityActivationEligible(
+                            edgeDistanceMeters,
+                            config.proximityPulseNearFenceDistanceMeters,
+                        )
+                    ) {
+                        near += fenceId
+                    } else {
+                        near -= fenceId
+                    }
                 } else {
                     proximity -= fenceId
+                    near -= fenceId
                 }
             }
         }
-        saveTargets(appContext, existing, proximity, inside, System.currentTimeMillis())
+        saveTargets(appContext, existing, proximity, near, inside, System.currentTimeMillis())
         reconcile(appContext, "internal_${state.name.lowercase()}:$source", forceReschedule = true)
     }
 
@@ -288,6 +335,7 @@ object ProximityPulseController {
                     purpose = purpose,
                     schedulingActive = existing?.schedulingActive ?: true,
                     proximityFenceIds = existing?.proximityFenceIds.orEmpty(),
+                    nearFenceIds = existing?.nearFenceIds.orEmpty(),
                     insideFenceIds = existing?.insideFenceIds.orEmpty(),
                     livenessStartedAtMillis = now,
                 ),
@@ -370,6 +418,7 @@ object ProximityPulseController {
                     config.proximityPulseOutsideActiveHoursIntervalMultiplier
                 },
                 "proximityTargetCount" to state.proximityFenceIds.size,
+                "nearFenceTargetCount" to state.nearFenceIds.size,
                 "insideTargetCount" to state.insideFenceIds.size,
             ),
         )
@@ -591,6 +640,10 @@ object ProximityPulseController {
             eligibleFenceIds = fenceIds,
             outsideFenceIds = outside,
         )
+        val nearFence = normalizedNearFenceIds(
+            persistedIds = existing?.nearFenceIds.orEmpty(),
+            proximityFenceIds = proximity,
+        )
         if (existing == null && proximity.isEmpty() && inside.isEmpty()) return null
         val purpose = existing?.purpose ?: ProximityPulsePurpose.INSIDE
         return ProximityPulseState(
@@ -598,6 +651,7 @@ object ProximityPulseController {
             purpose = purpose,
             schedulingActive = existing?.schedulingActive ?: false,
             proximityFenceIds = proximity,
+            nearFenceIds = nearFence,
             insideFenceIds = inside,
             livenessStartedAtMillis = existing?.livenessStartedAtMillis,
         ).also { if (it != existing) ProximityPulseStateStore.save(context, it) }
@@ -609,6 +663,7 @@ object ProximityPulseController {
         return selectPulsePurpose(
             pending = nonNativePending(context),
             proximityTargetCount = state?.proximityFenceIds?.size ?: 0,
+            nearFenceTargetCount = state?.nearFenceIds?.size ?: 0,
             insideTargetCount = state?.insideFenceIds?.size ?: 0,
             livenessRequested = state?.livenessStartedAtMillis != null,
             nowMillis = nowMillis,
@@ -626,6 +681,7 @@ object ProximityPulseController {
         context: Context,
         existing: ProximityPulseState?,
         proximityIds: Set<String>,
+        nearFenceIds: Set<String>,
         insideIds: Set<String>,
         nowMillis: Long,
     ) {
@@ -640,6 +696,7 @@ object ProximityPulseController {
                 },
                 schedulingActive = existing?.schedulingActive ?: false,
                 proximityFenceIds = proximityIds,
+                nearFenceIds = nearFenceIds.intersect(proximityIds),
                 insideFenceIds = insideIds,
                 livenessStartedAtMillis = existing?.livenessStartedAtMillis,
             ),
@@ -673,6 +730,7 @@ object ProximityPulseController {
                 "pendingInstanceCount" to nonNativePending(context).size,
                 "intervalMillis" to intervalMillis,
                 "proximityTargetCount" to state.proximityFenceIds.size,
+                "nearFenceTargetCount" to state.nearFenceIds.size,
                 "insideTargetCount" to state.insideFenceIds.size,
             ),
         )

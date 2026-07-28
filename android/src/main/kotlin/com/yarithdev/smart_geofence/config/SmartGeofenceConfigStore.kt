@@ -30,7 +30,9 @@ data class SmartGeofenceConfig(
     val passiveFollowUpEnabled: Boolean,
     val locationConfirmTimeoutMillis: Long,
     val pulseLocationMaxAccuracyMeters: Double,
+    // Retained wire name: this is the OUTSIDE event-accuracy limit.
     val eventLocationMaxAccuracyMeters: Double,
+    val insideEventLocationMaxAccuracyMeters: Double,
     val nativeExitConfirmationEnabled: Boolean,
     val nativeEnterConfirmationEnabled: Boolean,
     val nativeConfirmDelayMillis: Long,
@@ -48,6 +50,8 @@ data class SmartGeofenceConfig(
     val proximityPulseEnabled: Boolean,
     val proximityPulseActivationDistanceMeters: Double,
     val proximityPulseIntervalMillis: Long,
+    val proximityPulseNearFenceDistanceMeters: Double,
+    val proximityPulseNearFenceIntervalMillis: Long,
     val proximityConfirmMaxAttempts: Int,
     val proximityPulseTransitionConfirmationIntervalMillis: Long,
     val proximityPulseTransitionConfirmationBurstDurationMillis: Long,
@@ -87,6 +91,18 @@ data class SmartGeofenceConfig(
     val timeIntegrityConfigJson: String,
 ) {
     internal fun validateTransitionConfiguration(): SmartGeofenceConfig {
+        require(
+            eventLocationMaxAccuracyMeters > 0.0 &&
+                eventLocationMaxAccuracyMeters.isFinite()
+        ) {
+            "eventLocationMaxAccuracyMeters must be finite and greater than zero."
+        }
+        require(
+            insideEventLocationMaxAccuracyMeters > 0.0 &&
+                insideEventLocationMaxAccuracyMeters.isFinite()
+        ) {
+            "insideEventLocationMaxAccuracyMeters must be finite and greater than zero."
+        }
         require(nativeConfirmDelayMillis >= 0L) {
             "nativeConfirmDelayMillis must be non-negative."
         }
@@ -100,6 +116,15 @@ data class SmartGeofenceConfig(
         }
         require(proximityPulseIntervalMillis >= 0L) {
             "proximityPulseIntervalMillis must be non-negative."
+        }
+        require(
+            proximityPulseNearFenceDistanceMeters >= 0.0 &&
+                proximityPulseNearFenceDistanceMeters.isFinite()
+        ) {
+            "proximityPulseNearFenceDistanceMeters must be finite and non-negative."
+        }
+        require(proximityPulseNearFenceIntervalMillis >= 0L) {
+            "proximityPulseNearFenceIntervalMillis must be non-negative."
         }
         require(proximityConfirmMaxAttempts > 0) {
             "proximityConfirmMaxAttempts must be greater than zero."
@@ -174,6 +199,8 @@ data class SmartGeofenceConfig(
                 Constants.DEFAULT_PULSE_LOCATION_MAX_ACCURACY_METERS,
             eventLocationMaxAccuracyMeters =
                 Constants.DEFAULT_EVENT_LOCATION_MAX_ACCURACY_METERS,
+            insideEventLocationMaxAccuracyMeters =
+                Constants.DEFAULT_INSIDE_EVENT_LOCATION_MAX_ACCURACY_METERS,
             nativeExitConfirmationEnabled =
                 Constants.DEFAULT_NATIVE_EXIT_CONFIRMATION_ENABLED,
             nativeEnterConfirmationEnabled =
@@ -202,6 +229,10 @@ data class SmartGeofenceConfig(
                 Constants.DEFAULT_PROXIMITY_PULSE_ACTIVATION_DISTANCE_METERS,
             proximityPulseIntervalMillis =
                 Constants.DEFAULT_PROXIMITY_PULSE_INTERVAL_SECONDS * 1_000L,
+            proximityPulseNearFenceDistanceMeters =
+                Constants.DEFAULT_PROXIMITY_PULSE_NEAR_FENCE_DISTANCE_METERS,
+            proximityPulseNearFenceIntervalMillis =
+                Constants.DEFAULT_PROXIMITY_PULSE_NEAR_FENCE_INTERVAL_MILLIS,
             proximityConfirmMaxAttempts =
                 Constants.DEFAULT_PROXIMITY_CONFIRM_MAX_ATTEMPTS,
             proximityPulseTransitionConfirmationIntervalMillis =

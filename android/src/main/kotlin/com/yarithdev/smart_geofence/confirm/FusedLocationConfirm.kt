@@ -659,15 +659,24 @@ object FusedLocationConfirm {
             return false
         }
         if (!location.hasAccuracy()) return false
-        if (LocationQualityPolicy.rejectionReason(
-                location,
-                activeConfirmMaxAgeMillis(config),
-                config.eventLocationMaxAccuracyMeters,
-            ) != null
+        val edgeDistances = FenceStore.getAll(context).map { edgeDistance(location, it) }
+        val qualityNowMillis = System.currentTimeMillis()
+        if (edgeDistances.any { edgeDistanceMeters ->
+                val maxAccuracyMeters = if (edgeDistanceMeters <= 0.0) {
+                    config.insideEventLocationMaxAccuracyMeters
+                } else {
+                    config.eventLocationMaxAccuracyMeters
+                }
+                LocationQualityPolicy.rejectionReason(
+                    location,
+                    activeConfirmMaxAgeMillis(config),
+                    maxAccuracyMeters,
+                    qualityNowMillis,
+                ) != null
+            }
         ) {
             return false
         }
-        val edgeDistances = FenceStore.getAll(context).map { edgeDistance(location, it) }
         return isFixDecisiveForBoundaries(
             edgeDistances,
             location.accuracy.toDouble(),

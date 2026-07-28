@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import '../smart_geofence_config.dart';
 
-const int smartGeofenceConfigSchemaVersion = 6;
+const int smartGeofenceConfigSchemaVersion = 7;
 
 final class SmartGeofenceConfigDocument {
   const SmartGeofenceConfigDocument._({

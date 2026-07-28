@@ -122,12 +122,21 @@ internal object SmartGeofenceEventProcessor {
             )
         }
 
-        val eventRejection = LocationQualityPolicy.rejectionReason(
+        val qualityNowMillis = System.currentTimeMillis()
+        val generalEventRejection = LocationQualityPolicy.rejectionReason(
             location,
             input.maxAgeMillis,
-            config.eventLocationMaxAccuracyMeters,
+            if (classifications.isEmpty()) {
+                config.eventLocationMaxAccuracyMeters
+            } else {
+                maxOf(
+                    config.eventLocationMaxAccuracyMeters,
+                    config.insideEventLocationMaxAccuracyMeters,
+                )
+            },
+            qualityNowMillis,
         )
-        if (eventRejection != null) {
+        if (generalEventRejection != null) {
             classifications.forEach { classification ->
                 recordBoundaryDecision(
                     appContext,
@@ -144,9 +153,50 @@ internal object SmartGeofenceEventProcessor {
                     "Event location rejected after " +
                         "${classification.boundaryPosition.name.lowercase()} classification " +
                         "fence=${classification.fence.id} source=${input.source} " +
-                        "reason=$eventRejection.",
+                        "reason=$generalEventRejection.",
                 )
             }
+            return recordLocationResult(
+                appContext,
+                input,
+                LocationEventResult.EVENT_FILTER_REJECTED,
+            )
+        }
+        val classificationRejections = classifications.mapNotNull { classification ->
+            val maxAccuracyMeters = when (classification.boundaryPosition) {
+                BoundaryPosition.INSIDE -> config.insideEventLocationMaxAccuracyMeters
+                BoundaryPosition.OUTSIDE -> config.eventLocationMaxAccuracyMeters
+            }
+            LocationQualityPolicy.rejectionReason(
+                location,
+                input.maxAgeMillis,
+                maxAccuracyMeters,
+                qualityNowMillis,
+            )?.let { classification to it }
+        }.toMap()
+        classificationRejections.forEach { (classification, rejection) ->
+            recordBoundaryDecision(
+                appContext,
+                classification,
+                input.source,
+                accuracy,
+                isMock,
+                decision =
+                    "${classification.boundaryPosition.name.lowercase()}-event-filter-rejected",
+            )
+            SmartGeofenceLogger.d(
+                appContext,
+                TAG,
+                "Event location rejected after " +
+                    "${classification.boundaryPosition.name.lowercase()} classification " +
+                    "fence=${classification.fence.id} source=${input.source} " +
+                    "reason=$rejection.",
+            )
+        }
+        val acceptedClassifications = classifications.filterNot {
+            it in classificationRejections
+        }
+        if (classifications.isNotEmpty() && acceptedClassifications.isEmpty()) {
             return recordLocationResult(
                 appContext,
                 input,
@@ -164,7 +214,7 @@ internal object SmartGeofenceEventProcessor {
                     config.teleportMaxSpeedMetersPerSecond,
                 )
             ) {
-                classifications.forEach { classification ->
+                acceptedClassifications.forEach { classification ->
                     recordBoundaryDecision(
                         appContext,
                         classification,
@@ -191,7 +241,7 @@ internal object SmartGeofenceEventProcessor {
 
         if (!isMock) {
             try {
-                seedUnknownFromAcceptedFusedFix(appContext, location, accuracy)
+                seedUnknownFromAcceptedFusedFix(appContext, config, location, accuracy)
             } catch (error: Throwable) {
                 runCatching {
                     SmartGeofenceLogger.w(
@@ -205,7 +255,7 @@ internal object SmartGeofenceEventProcessor {
             }
         }
 
-        if (classifications.isEmpty()) {
+        if (acceptedClassifications.isEmpty()) {
             SmartGeofenceLogger.d(
                 appContext,
                 TAG,
@@ -216,7 +266,7 @@ internal object SmartGeofenceEventProcessor {
             return recordLocationResult(appContext, input, LocationEventResult.PROCESSED)
         }
 
-        classifications.forEach { classification ->
+        acceptedClassifications.forEach { classification ->
             val observedState = when (classification.boundaryPosition) {
                 BoundaryPosition.INSIDE -> ObservedFenceState.INSIDE
                 BoundaryPosition.OUTSIDE -> ObservedFenceState.OUTSIDE
@@ -1688,6 +1738,7 @@ internal object SmartGeofenceEventProcessor {
 
     private fun seedUnknownFromAcceptedFusedFix(
         context: Context,
+        config: SmartGeofenceConfig,
         location: Location,
         accuracyMeters: Double,
     ) {
@@ -1700,7 +1751,14 @@ internal object SmartGeofenceEventProcessor {
                 distanceMeters = location.distanceTo(center).toDouble(),
                 accuracyMeters = accuracyMeters,
                 radiusMeters = fence.radiusMeters,
-            )?.let { fence.id to it }
+            )?.takeIf { state ->
+                accuracyMeters <= when (state) {
+                    ObservedFenceState.INSIDE ->
+                        config.insideEventLocationMaxAccuracyMeters
+                    ObservedFenceState.OUTSIDE ->
+                        config.eventLocationMaxAccuracyMeters
+                }
+            }?.let { fence.id to it }
         }.toMap(linkedMapOf())
         FenceObservationStore.seedUnknownFromAcceptedFusedFix(context, baselines)
     }

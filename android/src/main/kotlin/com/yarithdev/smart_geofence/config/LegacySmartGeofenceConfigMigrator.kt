@@ -114,6 +114,10 @@ internal object LegacySmartGeofenceConfigMigrator {
                 Constants.CONFIG_EVENT_LOCATION_MAX_ACCURACY_METERS,
                 d.eventLocationMaxAccuracyMeters.toFloat()
             ).toDouble(),
+            insideEventLocationMaxAccuracyMeters = p.getFloat(
+                Constants.CONFIG_INSIDE_EVENT_LOCATION_MAX_ACCURACY_METERS,
+                d.insideEventLocationMaxAccuracyMeters.toFloat()
+            ).toDouble(),
             nativeExitConfirmationEnabled = nativeExitConfirmationEnabled,
             nativeEnterConfirmationEnabled = nativeEnterConfirmationEnabled,
             nativeConfirmDelayMillis = d.nativeConfirmDelayMillis,
@@ -160,6 +164,14 @@ internal object LegacySmartGeofenceConfigMigrator {
                     Constants.CONFIG_PROXIMITY_PULSE_INTERVAL_SECONDS,
                     TimeUnit.MILLISECONDS.toSeconds(d.proximityPulseIntervalMillis),
                 ),
+            ),
+            proximityPulseNearFenceDistanceMeters = p.getFloat(
+                Constants.CONFIG_PROXIMITY_PULSE_NEAR_FENCE_DISTANCE_METERS,
+                d.proximityPulseNearFenceDistanceMeters.toFloat(),
+            ).toDouble(),
+            proximityPulseNearFenceIntervalMillis = p.getLong(
+                Constants.CONFIG_PROXIMITY_PULSE_NEAR_FENCE_INTERVAL_MILLIS,
+                d.proximityPulseNearFenceIntervalMillis,
             ),
             proximityConfirmMaxAttempts = d.proximityConfirmMaxAttempts,
             proximityPulseTransitionConfirmationIntervalMillis =
@@ -499,6 +511,7 @@ private fun normalizeStoredConfig(prefs: SharedPreferences) {
         Constants.CONFIG_PROXIMITY_PULSE_DURATION_MINUTES,
         Constants.CONFIG_PROXIMITY_PULSE_INTERVAL_SECONDS,
         Constants.CONFIG_PROXIMITY_PULSE_HIGH_RATE_INTERVAL_MILLIS,
+        Constants.CONFIG_PROXIMITY_PULSE_NEAR_FENCE_INTERVAL_MILLIS,
         Constants.CONFIG_PROXIMITY_PULSE_MIN_INTERVAL_MILLIS,
         Constants.CONFIG_PROXIMITY_PULSE_FIRST_TICK_DELAY_MILLIS,
         Constants.CONFIG_ACTIVITY_STATIONARY_TTL_MILLIS,
@@ -531,10 +544,12 @@ private fun normalizeStoredConfig(prefs: SharedPreferences) {
         Constants.CONFIG_PROXIMITY_ADAPTIVE_HYSTERESIS_METERS,
         Constants.CONFIG_PULSE_LOCATION_MAX_ACCURACY_METERS,
         Constants.CONFIG_EVENT_LOCATION_MAX_ACCURACY_METERS,
+        Constants.CONFIG_INSIDE_EVENT_LOCATION_MAX_ACCURACY_METERS,
         Constants.CONFIG_NATIVE_ENTER_CONFIRM_RADIUS_SLACK_METERS,
         Constants.CONFIG_NATIVE_ENTER_PAYLOAD_DISTANCE_SLACK_METERS,
         Constants.CONFIG_TELEPORT_MAX_SPEED_MPS,
         Constants.CONFIG_PROXIMITY_PULSE_HIGH_RATE_DISTANCE_METERS,
+        Constants.CONFIG_PROXIMITY_PULSE_NEAR_FENCE_DISTANCE_METERS,
     ).forEach(::normalizeFloat)
 
     normalizeStringSet(Constants.CONFIG_RECOVERY_TIMES_MINUTE_OF_DAY)

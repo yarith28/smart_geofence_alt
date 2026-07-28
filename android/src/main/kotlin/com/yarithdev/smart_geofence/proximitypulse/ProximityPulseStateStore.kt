@@ -9,6 +9,7 @@ import org.json.JSONArray
 
 enum class ProximityPulsePurpose {
     PROXIMITY,
+    NEAR_FENCE,
     INSIDE,
     TRANSITION_CONFIRMATION,
     FUSED_LIVENESS,
@@ -19,6 +20,7 @@ data class ProximityPulseState(
     val purpose: ProximityPulsePurpose,
     val schedulingActive: Boolean,
     val proximityFenceIds: Set<String> = emptySet(),
+    val nearFenceIds: Set<String> = emptySet(),
     val insideFenceIds: Set<String> = emptySet(),
     val livenessStartedAtMillis: Long? = null,
 )
@@ -28,6 +30,7 @@ object ProximityPulseStateStore {
     private const val KEY_PURPOSE = "proximity_pulse_purpose"
     private const val KEY_SCHEDULING_ACTIVE = "proximity_pulse_scheduling_active"
     private const val KEY_PROXIMITY_FENCE_IDS = "proximity_pulse_proximity_fence_ids"
+    private const val KEY_NEAR_FENCE_IDS = "proximity_pulse_near_fence_ids"
     private const val KEY_INSIDE_FENCE_IDS = "proximity_pulse_inside_fence_ids"
     private const val KEY_LIVENESS_STARTED_AT = "proximity_pulse_liveness_started_at_millis"
 
@@ -45,6 +48,7 @@ object ProximityPulseStateStore {
             purpose = purpose,
             schedulingActive = prefs.safeBoolean(KEY_SCHEDULING_ACTIVE, true),
             proximityFenceIds = decodeIds(prefs.safeString(KEY_PROXIMITY_FENCE_IDS)),
+            nearFenceIds = decodeIds(prefs.safeString(KEY_NEAR_FENCE_IDS)),
             insideFenceIds = decodeIds(prefs.safeString(KEY_INSIDE_FENCE_IDS)),
             livenessStartedAtMillis = prefs.safeLong(KEY_LIVENESS_STARTED_AT, 0L)
                 .takeIf { it > 0L }
@@ -63,6 +67,7 @@ object ProximityPulseStateStore {
             .putString(KEY_PURPOSE, state.purpose.name)
             .putBoolean(KEY_SCHEDULING_ACTIVE, state.schedulingActive)
             .putString(KEY_PROXIMITY_FENCE_IDS, encodeIds(state.proximityFenceIds))
+            .putString(KEY_NEAR_FENCE_IDS, encodeIds(state.nearFenceIds))
             .putString(KEY_INSIDE_FENCE_IDS, encodeIds(state.insideFenceIds))
         if (state.livenessStartedAtMillis == null) {
             editor.remove(KEY_LIVENESS_STARTED_AT)
@@ -79,6 +84,7 @@ object ProximityPulseStateStore {
             .remove(KEY_PURPOSE)
             .remove(KEY_SCHEDULING_ACTIVE)
             .remove(KEY_PROXIMITY_FENCE_IDS)
+            .remove(KEY_NEAR_FENCE_IDS)
             .remove(KEY_INSIDE_FENCE_IDS)
             .remove(KEY_LIVENESS_STARTED_AT)
             .remove("proximity_pulse_idle_ticks")

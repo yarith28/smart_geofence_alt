@@ -7,7 +7,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 internal object SmartGeofenceConfigCodec {
-    const val CURRENT_SCHEMA_VERSION = 6
+    const val CURRENT_SCHEMA_VERSION = 7
     const val LEGACY_SCHEMA_VERSION = 1
 
     private const val FIELD_SCHEMA_VERSION = "schemaVersion"
@@ -166,6 +166,14 @@ internal object SmartGeofenceConfigCodec {
                 "eventLocationMaxAccuracyMeters",
                 d.eventLocationMaxAccuracyMeters,
             ),
+            insideEventLocationMaxAccuracyMeters = if (schemaVersion >= 7) {
+                source.double(
+                    "insideEventLocationMaxAccuracyMeters",
+                    d.insideEventLocationMaxAccuracyMeters,
+                )
+            } else {
+                d.insideEventLocationMaxAccuracyMeters
+            },
             nativeExitConfirmationEnabled = nativeExitConfirmationEnabled,
             nativeEnterConfirmationEnabled = nativeEnterConfirmationEnabled,
             nativeConfirmDelayMillis = source.long(
@@ -241,6 +249,22 @@ internal object SmartGeofenceConfigCodec {
                     "proximityPulseIntervalMillis",
                     d.proximityPulseIntervalMillis,
                 )
+            },
+            proximityPulseNearFenceDistanceMeters = if (schemaVersion >= 7) {
+                source.double(
+                    "proximityPulseNearFenceDistanceMeters",
+                    d.proximityPulseNearFenceDistanceMeters,
+                )
+            } else {
+                d.proximityPulseNearFenceDistanceMeters
+            },
+            proximityPulseNearFenceIntervalMillis = if (schemaVersion >= 7) {
+                source.long(
+                    "proximityPulseNearFenceIntervalMillis",
+                    d.proximityPulseNearFenceIntervalMillis,
+                )
+            } else {
+                d.proximityPulseNearFenceIntervalMillis
             },
             proximityConfirmMaxAttempts = if (schemaVersion >= 6) {
                 source.int(
@@ -428,6 +452,7 @@ internal object SmartGeofenceConfigCodec {
         .put("locationConfirmTimeoutMillis", locationConfirmTimeoutMillis)
         .put("pulseLocationMaxAccuracyMeters", pulseLocationMaxAccuracyMeters)
         .put("eventLocationMaxAccuracyMeters", eventLocationMaxAccuracyMeters)
+        .put("insideEventLocationMaxAccuracyMeters", insideEventLocationMaxAccuracyMeters)
         .put("nativeExitConfirmationEnabled", nativeExitConfirmationEnabled)
         .put("nativeEnterConfirmationEnabled", nativeEnterConfirmationEnabled)
         .put("nativeConfirmDelayMillis", nativeConfirmDelayMillis)
@@ -445,6 +470,8 @@ internal object SmartGeofenceConfigCodec {
         .put("proximityPulseEnabled", proximityPulseEnabled)
         .put("proximityPulseActivationDistanceMeters", proximityPulseActivationDistanceMeters)
         .put("proximityPulseIntervalMillis", proximityPulseIntervalMillis)
+        .put("proximityPulseNearFenceDistanceMeters", proximityPulseNearFenceDistanceMeters)
+        .put("proximityPulseNearFenceIntervalMillis", proximityPulseNearFenceIntervalMillis)
         .put("proximityConfirmMaxAttempts", proximityConfirmMaxAttempts)
         .put(
             "proximityPulseTransitionConfirmationIntervalMillis",

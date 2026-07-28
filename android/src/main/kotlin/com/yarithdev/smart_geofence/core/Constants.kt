@@ -43,6 +43,8 @@ object Constants {
         "config_pulse_location_max_accuracy_meters"
     const val CONFIG_EVENT_LOCATION_MAX_ACCURACY_METERS =
         "config_event_location_max_accuracy_meters"
+    const val CONFIG_INSIDE_EVENT_LOCATION_MAX_ACCURACY_METERS =
+        "config_inside_event_location_max_accuracy_meters"
     const val CONFIG_NATIVE_EXIT_CONFIRMATION_ENABLED =
         "config_native_exit_confirmation_enabled"
     const val CONFIG_NATIVE_ENTER_CONFIRMATION_ENABLED =
@@ -79,6 +81,10 @@ object Constants {
         "config_proximity_pulse_exact_alarm_start_delay_millis"
     const val CONFIG_PROXIMITY_PULSE_ACTIVATION_DISTANCE_METERS =
         "config_proximity_pulse_activation_distance_meters"
+    const val CONFIG_PROXIMITY_PULSE_NEAR_FENCE_DISTANCE_METERS =
+        "config_proximity_pulse_near_fence_distance_meters"
+    const val CONFIG_PROXIMITY_PULSE_NEAR_FENCE_INTERVAL_MILLIS =
+        "config_proximity_pulse_near_fence_interval_millis"
     const val CONFIG_PROXIMITY_PULSE_TRANSITION_CONFIRMATION_INTERVAL_MILLIS =
         "config_proximity_pulse_transition_confirmation_interval_millis"
     const val CONFIG_PROXIMITY_PULSE_TRANSITION_CONFIRMATION_BURST_DURATION_MILLIS =
@@ -187,6 +193,7 @@ object Constants {
     const val DEFAULT_LAST_LOCATION_TIMEOUT_MILLIS = 5 * 1000L
     const val DEFAULT_PULSE_LOCATION_MAX_ACCURACY_METERS = 300.0
     const val DEFAULT_EVENT_LOCATION_MAX_ACCURACY_METERS = 150.0
+    const val DEFAULT_INSIDE_EVENT_LOCATION_MAX_ACCURACY_METERS = 300.0
     const val DEFAULT_NATIVE_EXIT_CONFIRMATION_ENABLED = true
     const val DEFAULT_NATIVE_ENTER_CONFIRMATION_ENABLED = true
     const val DEFAULT_NATIVE_CONFIRM_MAX_ATTEMPTS = 3
@@ -203,6 +210,8 @@ object Constants {
     const val DEFAULT_PROXIMITY_PULSE_ENABLED = true
     const val DEFAULT_PROXIMITY_PULSE_INTERVAL_SECONDS = 6 * 60L
     const val DEFAULT_PROXIMITY_PULSE_ACTIVATION_DISTANCE_METERS = 1_500.0
+    const val DEFAULT_PROXIMITY_PULSE_NEAR_FENCE_DISTANCE_METERS = 300.0
+    const val DEFAULT_PROXIMITY_PULSE_NEAR_FENCE_INTERVAL_MILLIS = 150_000L
     const val DEFAULT_PROXIMITY_PULSE_TRANSITION_CONFIRMATION_INTERVAL_MILLIS = 90_000L
     const val DEFAULT_PROXIMITY_PULSE_TRANSITION_CONFIRMATION_BURST_DURATION_MILLIS =
         5 * 60_000L

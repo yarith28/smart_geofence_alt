@@ -37,6 +37,8 @@ object AdaptivePulseRate {
         val requested = when (purpose) {
             ProximityPulsePurpose.TRANSITION_CONFIRMATION ->
                 config.proximityPulseTransitionConfirmationIntervalMillis
+            ProximityPulsePurpose.NEAR_FENCE ->
+                config.proximityPulseNearFenceIntervalMillis
             ProximityPulsePurpose.PROXIMITY,
             ProximityPulsePurpose.INSIDE,
             ProximityPulsePurpose.FUSED_LIVENESS,
