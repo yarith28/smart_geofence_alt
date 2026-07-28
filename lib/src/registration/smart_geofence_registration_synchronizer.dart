@@ -921,7 +921,19 @@ class _SmartGeofenceRegistrationSynchronizer {
       ng.GeofenceEvent.exit,
     },
     iosSettings: geofence.iosSettings,
-    androidSettings: geofence.androidSettings,
+    androidSettings: _androidSettingsWithSmartDefaults(
+      geofence.androidSettings,
+    ),
+  );
+
+  ng.AndroidGeofenceSettings _androidSettingsWithSmartDefaults(
+    ng.AndroidGeofenceSettings settings,
+  ) => ng.AndroidGeofenceSettings(
+    initialTriggers: settings.initialTriggers,
+    expiration: settings.expiration,
+    loiteringDelay: settings.loiteringDelay,
+    notificationResponsiveness:
+        settings.notificationResponsiveness ?? Duration.zero,
   );
 
   SGRadiusNormalization _androidRadiusNormalization(ng.Geofence geofence) {
@@ -957,7 +969,8 @@ class _SmartGeofenceRegistrationSynchronizer {
     initialTriggers: const <ng.GeofenceEvent>{},
     expiration: settings?.expiration,
     loiteringDelay: settings?.loiteringDelay ?? Duration.zero,
-    notificationResponsiveness: settings?.notificationResponsiveness,
+    notificationResponsiveness:
+        settings?.notificationResponsiveness ?? Duration.zero,
   );
 
   Future<Map<Object?, Object?>?> _registerFenceMirror(
